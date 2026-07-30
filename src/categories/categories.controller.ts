@@ -35,6 +35,12 @@ export class CategoriesController {
     return this.categoriesService.reorderCategories(items);
   }
 
+  @Put('products/reorder')
+  @UseGuards(JwtAuthGuard)
+  reorderProducts(@Body() items: { id: number; position: number }[]) {
+    return this.categoriesService.reorderProducts(items);
+  }
+
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {

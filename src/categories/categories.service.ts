@@ -287,6 +287,13 @@ export class CategoriesService {
     return mapProduct(saved);
   }
 
+  async reorderProducts(items: { id: number; position: number }[]) {
+    for (const item of items) {
+      await this.productRepo.update({ id: item.id }, { position: item.position });
+    }
+    return { success: true };
+  }
+
   async deleteProduct(categoryId: string, productId: number) {
     await this.requireCategory(categoryId);
     const product = await this.productRepo.findOne({
