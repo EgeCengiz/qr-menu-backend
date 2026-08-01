@@ -135,14 +135,23 @@ export class CategoriesService {
         order: { position: 'ASC' },
       });
 
+      let cleanVideoUrl = cat.videoUrl;
+      if (cleanVideoUrl && cleanVideoUrl.includes('/uploads/')) {
+        cleanVideoUrl = cleanVideoUrl.substring(cleanVideoUrl.indexOf('/uploads/'));
+      }
+      let cleanImg = cat.img;
+      if (cleanImg && cleanImg.includes('/uploads/')) {
+        cleanImg = cleanImg.substring(cleanImg.indexOf('/uploads/'));
+      }
+
       result.push({
         id: cat.id,
         num: cat.num,
         title: cat.title,
         subtitle: cat.subtitle,
-        img: cat.img,
+        img: cleanImg,
         position: cat.position,
-        videoUrl: cat.videoUrl,
+        videoUrl: cleanVideoUrl,
         itemCount: `${products.length} ÜRÜN`,
         subCategories: subCats.map((s) => mapSubCategory(s, products)),
         items: products.map(mapProduct),
@@ -157,13 +166,29 @@ export class CategoriesService {
     if (existing) {
       throw new Error(`Category with id "${dto.id}" already exists`);
     }
-    const cat = this.categoryRepo.create({ ...dto, videoUrl: dto.videoUrl ?? null });
+    let videoUrl = dto.videoUrl ?? null;
+    if (videoUrl && videoUrl.includes('/uploads/')) {
+      videoUrl = videoUrl.substring(videoUrl.indexOf('/uploads/'));
+    }
+    let img = dto.img;
+    if (img && img.includes('/uploads/')) {
+      img = img.substring(img.indexOf('/uploads/'));
+    }
+    const cat = this.categoryRepo.create({ ...dto, img, videoUrl });
     return this.categoryRepo.save(cat);
   }
 
   async updateCategory(id: string, dto: UpdateCategoryDto) {
     const cat = await this.categoryRepo.findOne({ where: { id } });
-    if (!cat) throw new NotFoundException(`Category "${id}" not found`);
+    if (!cat) {
+      throw new NotFoundException(`Category with id "${id}" not found`);
+    }
+    if (dto.videoUrl !== undefined && dto.videoUrl && dto.videoUrl.includes('/uploads/')) {
+      dto.videoUrl = dto.videoUrl.substring(dto.videoUrl.indexOf('/uploads/'));
+    }
+    if (dto.img !== undefined && dto.img && dto.img.includes('/uploads/')) {
+      dto.img = dto.img.substring(dto.img.indexOf('/uploads/'));
+    }
     Object.assign(cat, dto);
     return this.categoryRepo.save(cat);
   }

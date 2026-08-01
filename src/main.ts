@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as mysql from 'mysql2/promise';
+import * as path from 'path';
+import * as fs from 'fs';
 
 async function ensureDatabaseExists() {
   const host = process.env.DB_HOST || 'localhost';
@@ -26,7 +29,31 @@ async function bootstrap() {
   // Ensure database exists before NestJS connects with TypeORM
   await ensureDatabaseExists();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: true,
+  });
+
+  // ── Increase body size limit for large video uploads ─────────────────────────
+  app.use(require('express').json({ limit: '200mb' }));
+  app.use(require('express').urlencoded({ limit: '200mb', extended: true }));
+
+  // ── Serve uploaded files as static assets with aggressive caching ─────────
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Serve /uploads with:
+  //  - 1-year Cache-Control (immutable filenames from UUID upload)
+  //  - Accept-Ranges: bytes (required by iOS Safari for video seek/stream)
+  //  - ETag support (conditional requests to skip re-download)
+  app.useStaticAssets(uploadsDir, {
+    prefix: '/uploads',
+    maxAge: '365d',       // 1 year browser cache
+    etag: true,           // ETag for conditional GET
+    lastModified: true,   // Last-Modified header
+    immutable: true,      // Tell browser: file won't change at this URL
+  });
 
   const corsOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
@@ -63,4 +90,5 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 QR Menu Backend running on http://localhost:${port}/api and network interfaces`);
 }
+// Trigger watch reload v2
 bootstrap();

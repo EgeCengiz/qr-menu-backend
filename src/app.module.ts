@@ -13,6 +13,7 @@ import { ProductEntity } from './entities/product.entity';
 import { WelcomeMediaEntity } from './entities/welcome-media.entity';
 import { SettingsEntity } from './entities/settings.entity';
 import { SettingsModule } from './settings/settings.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SettingsModule } from './settings/settings.module';
     WelcomeModule,
     SeedModule,
     SettingsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
